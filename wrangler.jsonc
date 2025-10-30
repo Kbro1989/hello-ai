@@ -1,12 +1,12 @@
-    1 {
-    2   "$schema": "node_modules/wrangler/config-schema.json",
-    3   "name": "hello-ai",
-    4   "main": "src/index.ts",
-    5   "compatibility_date": "2025-10-29",
-    6   "observability": {
-    7     "enabled": true
-    8   },
-    9   "ai": {
-   10     "binding": "AI"
-   11   }
-   12 }
+     {
+       "$schema": "node_modules/wrangler/config-schema.json",
+       "name": "hello-ai",
+       "main": "src/index.ts",
+       "compatibility_date": "2025-10-29",
+       "observability": {
+         "enabled": true
+       },
+       "ai": {
+        "binding": "AI"
+      }
+    }
