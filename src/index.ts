@@ -4,9 +4,7 @@ interface Env {
 }
 
 async function fetch(request: Request, env: Env): Promise<Response> {
-  const url = new URL(request.url);
-
-  if (request.method === 'POST' && url.pathname === '/') {
+  if (request.method === 'POST') {
     let user_prompt;
     try {
       const body = await request.json();
@@ -25,11 +23,7 @@ async function fetch(request: Request, env: Env): Promise<Response> {
     return new Response(JSON.stringify(response));
   }
 
-  if (request.method === 'GET' && url.pathname === '/') {
-    return env.ASSETS.fetch(new Request(url.origin + '/index.html', request));
-  }
-
-  return new Response('Not found', { status: 404 });
+  return new Response('Method Not Allowed', { status: 405 });
 }
 
 export default {
