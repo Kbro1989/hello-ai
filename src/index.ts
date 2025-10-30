@@ -1,7 +1,6 @@
-import index from '../public/index.html';
-
 interface Env {
   AI: any;
+  ASSETS: any;
 }
 
 async function fetch(request: Request, env: Env): Promise<Response> {
@@ -24,11 +23,7 @@ async function fetch(request: Request, env: Env): Promise<Response> {
     return new Response(JSON.stringify(response));
   }
 
-  return new Response(index, {
-    headers: {
-      'Content-Type': 'text/html',
-    },
-  });
+  return env.ASSETS.fetch(request);
 }
 
 export default {
