@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cloudflare AI Agent</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      width: 80%;
+      max-width: 800px;
+    }
+    #prompt {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    #response {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Cloudflare AI Agent</h1>
+    <form id="prompt-form">
+      <input type="text" id="prompt" placeholder="Enter your prompt here...">
+      <button type="submit">Submit</button>
+    </form>
+    <div id="response"></div>
+  </div>
+  <script>
+    const form = document.getElementById('prompt-form');
+    const promptInput = document.getElementById('prompt');
+    const responseDiv = document.getElementById('response');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const prompt = promptInput.value;
+      responseDiv.textContent = 'Loading...';
+
+      const response = await fetch('/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      const data = await response.json();
+      responseDiv.textContent = data.response;
+    });
+  </script>
+</body>
+</html>
