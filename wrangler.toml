@@ -1,0 +1,17 @@
+name = "hello-ai"
+main = "src/index.ts"
+compatibility_date = "2025-10-11"
+compatibility_flags = ["nodejs_compat"]
+
+# Observability (free tier)
+[observability]
+enabled = true
+
+# AI binding
+[ai]
+binding = "AI"
+
+# KV namespace binding
+[[kv_namespaces]]
+binding = "MODEL_STORAGE"
+id = "b6da4d0c89f843409c799eb8b9005e6b"

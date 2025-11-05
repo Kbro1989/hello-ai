@@ -1,0 +1,1 @@
+This project is a "Hello World" for Cloudflare's AI platform. It's a web application that serves a simple HTML page and has a backend that takes a user's prompt and uses Cloudflare's AI to generate a response from the Llama 3.1 language model.

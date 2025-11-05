@@ -1,0 +1,21 @@
+export default {
+  async fetch(request, env, ctx): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Write test key
+    await env.MODEL_STORAGE.put("test-key", "Hello from KV!");
+
+    // Read it back
+    const value = await env.MODEL_STORAGE.get("test-key");
+
+    return new Response(
+      JSON.stringify({
+        message: "KV test successful!",
+        key: "test-key",
+        value,
+        namespace: env.MODEL_STORAGE ? "connected" : "missing",
+      }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+  },
+};
