@@ -1,98 +1,129 @@
-import { Env as ModelStorageEnv, saveModelData, getModelData } from './modelStorage';
-import { getAssetFromKV, mapRequestToAsset } from '@cloudflare/kv-asset-handler';
+import { getAssetFromKV } from '@cloudflare/kv-asset-handler';
+import { AIModelService } from './services/aiModelService';
+import { Model3D } from './types/models';
 
-export interface Env extends ModelStorageEnv {
-  __STATIC_CONTENT: KVNamespace;
-  AI: any;
+export interface Env {
+    ASSETS: KVNamespace;
+    AI: any;
 }
 
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    try {
-      const url = new URL(request.url);
-      const path = url.pathname;
-      // Log request method and path for debugging routing issues
-      console.log(`Request received: ${request.method} ${path}`);
-
-      // Handle model saving (POST /models/:id)
-      if (request.method === "POST" && path.startsWith("/models/")) {
-        const modelId = path.substring("/models/".length);
+    async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
         try {
-          const modelData = await request.json();
-          await saveModelData(env, modelId, modelData);
+            const aiService = new AIModelService(env.AI);
+            const url = new URL(request.url);
+            
+            // Handle CORS
+            if (request.method === 'OPTIONS') {
+                return new Response(null, {
+                    headers: getCorsHeaders()
+                });
+            }
 
-          return new Response(
-            JSON.stringify({ message: `Model ${modelId} saved successfully` }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } }
-          );
+            // API endpoints
+            if (url.pathname.startsWith('/api/')) {
+                return handleApiRequest(url.pathname, request, env, aiService);
+            }
+
+            // Serve static assets
+            return await getAssetFromKV(
+                { request, waitUntil: ctx.waitUntil.bind(ctx) },
+                { ASSET_NAMESPACE: env.ASSETS }
+            );
         } catch (error: any) {
-          console.error(`Error saving model: ${error.message}`);
-          return new Response(
-            JSON.stringify({ error: `Error saving model: ${error.message}` }),
-            { status: 500, headers: { 'Content-Type': 'application/json' } }
-          );
+            return new Response(`Server Error: ${error.message}`, { status: 500 });
         }
-      }
-
-      // Handle model retrieval (GET /models/:id)
-      else if (request.method === "GET" && path.startsWith("/models/")) {
-        const modelId = path.substring("/models/".length);
-        const modelData = await getModelData(env, modelId);
-
-        if (modelData) {
-          return new Response(JSON.stringify(modelData), {
-            headers: { 'Content-Type': 'application/json' },
-          });
-        } else {
-          return new Response(
-            JSON.stringify({ error: `Model ${modelId} not found` }),
-            { status: 404, headers: { 'Content-Type': 'application/json' } }
-          );
-        }
-      }
-
-      // Handle AI chat (POST /api/chat)
-      else if (request.method === "POST" && path === "/api/chat") {
-        try {
-          const { message } = await request.json();
-          const messages = [
-            {
-              role: "system",
-              content:
-                "You are a helpful assistant for managing RuneScape 3D models. You can help list, load, and edit models.",
-            },
-            { role: "user", content: message },
-          ];
-
-          const modelName = "@cf/meta/llama-3.1-8b-instruct";
-          const aiResponse = await env.AI.run(modelName, { messages });
-
-          return new Response(JSON.stringify(aiResponse || { response: "No AI response generated." }), {
-            headers: { "Content-Type": "application/json" },
-          });
-        } catch (error: any) {
-          console.
-error(`Error processing AI chat request: ${error.message}`);
-          console.error("Full AI error object:", error);
-          return new Response(
-            JSON.stringify({ error: `AI chat request failed: ${error.message}` }),
-            { status: 500, headers: { 'Content-Type': 'application/json' } }
-          );
-        }
-      }
-
-      // Fallback: serve static assets
-      return await getAssetFromKV(
-        { request, waitUntil: ctx.waitUntil.bind(ctx) } as any,
-        { __STATIC_CONTENT: env.__STATIC_CONTENT, mapRequestToAsset }
-      );
-    } catch (error: any) {
-      const pathname = new URL(request.url).pathname;
-      console.error(`Unhandled error in fetch handler for ${pathname}: ${error.message}`);
-      return new Response(
-        JSON.stringify({ error: `Internal Server Error: ${error.message}` }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
     }
-  },
 };
+
+function getCorsHeaders() {
+    return {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+    };
+}
+
+async function handleApiRequest(
+    path: string,
+    request: Request,
+    env: Env,
+    aiService: AIModelService
+): Promise<Response> {
+    const modelPrefix = 'models/';
+
+    try {
+        // List models
+        if (path === '/api/models' && request.method === 'GET') {
+            return await listModels(env);
+        }
+
+        // Upload model
+        if (path === '/api/models' && request.method === 'POST') {
+            return await uploadModel(request, env);
+        }
+
+        // Evolve model
+        if (path.startsWith('/api/models/evolve/') && request.method === 'POST') {
+            return await evolveModel(path, request, env, aiService);
+        }
+
+        return new Response('Not Found', { status: 404 });
+    } catch (error: any) {
+        return new Response(`API Error: ${error.message}`, { status: 500 });
+    }
+}
+
+async function listModels(env: Env): Promise<Response> {
+    const models = await env.ASSETS.list({ prefix: 'models/' });
+    const modelList = await Promise.all(models.keys.map(async (key) => {
+        const metadata = await env.ASSETS.get(`${key.name}.metadata`, 'json');
+        return { key: key.name, metadata };
+    }));
+    return jsonResponse(modelList);
+}
+
+async function uploadModel(request: Request, env: Env): Promise<Response> {
+    const data = await request.json() as Model3D;
+    const key = `models/${crypto.randomUUID()}`;
+    
+    await env.ASSETS.put(key, JSON.stringify(data.geometry));
+    await env.ASSETS.put(`${key}.metadata`, JSON.stringify(data.metadata));
+    
+    return jsonResponse({ id: key, message: 'Model uploaded successfully' });
+}
+
+async function evolveModel(
+    path: string,
+    request: Request,
+    env: Env,
+    aiService: AIModelService
+): Promise<Response> {
+    const modelId = path.split('/').pop();
+    const modelData = await env.ASSETS.get(`models/${modelId}`, 'json');
+    
+    if (!modelData) {
+        return new Response('Model not found', { status: 404 });
+    }
+
+    const { prompt } = await request.json();
+    const evolvedModel = await aiService.evolveModel(modelData, prompt);
+    const evolvedKey = `models/${evolvedModel.id}`;
+    
+    await env.ASSETS.put(evolvedKey, JSON.stringify(evolvedModel.geometry));
+    await env.ASSETS.put(`${evolvedKey}.metadata`, JSON.stringify(evolvedModel.metadata));
+    
+    return jsonResponse({ 
+        id: evolvedModel.id, 
+        message: 'Model evolved successfully' 
+    });
+}
+
+function jsonResponse(data: any): Response {
+    return new Response(JSON.stringify(data), {
+        headers: {
+            'Content-Type': 'application/json',
+            ...getCorsHeaders()
+        }
+    });
+}

@@ -1,17 +1,18 @@
 name = "hello-ai"
 main = "src/index.ts"
-compatibility_date = "2025-10-11"
-compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2025-11-05"
 
-# Observability (free tier)
-[observability]
-enabled = true
+[site]
+bucket = "./public"
 
-# AI binding
+[[kv_namespaces]]
+binding = "ASSETS"
+id = "9b6cce9e90644ff28a2cff2c113811ca"
+preview_id = "4a452d73838945b5a3065ef63c68d951"
+
 [ai]
 binding = "AI"
 
-# KV namespace binding
-[[kv_namespaces]]
-binding = "MODEL_STORAGE"
-id = "b6da4d0c89f843409c799eb8b9005e6b"
+[dev]
+port = 8787
+ip = "127.0.0.1"

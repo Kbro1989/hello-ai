@@ -47,10 +47,10 @@ dev-worker [options]
 
 ### Options
 
-* `--dry-run`: Refine sections without applying to GEMINI.md
-* `--preview`: Preview each section and confirm before refinement
-* `--skip`: Skip a section entirely
-* `-h, --help`: Show help
+- `--dry-run`: Refine sections without applying to GEMINI.md
+- `--preview`: Preview each section and confirm before refinement
+- `--skip`: Skip a section entirely
+- `-h, --help`: Show help
 
 ---
 
@@ -85,17 +85,17 @@ npm run test
 
 Tests cover:
 
-* CLI flag handling
-* Chunked processing
-* Logging behavior
+- CLI flag handling
+- Chunked processing
+- Logging behavior
 
 ---
 
 ## Notes
 
-* Free-tier Cloudflare AI bindings are used; no paid features required.
-* Ensure `NODE_TLS_REJECT_UNAUTHORIZED=0` in Windows to bypass local TLS issues if needed.
-* Logs and session history are stored in `logs/`.
+- Free-tier Cloudflare AI bindings are used; no paid features required.
+- Ensure `NODE_TLS_REJECT_UNAUTHORIZED=0` in Windows to bypass local TLS issues if needed.
+- Logs and session history are stored in `logs/`.
 
 ---
 

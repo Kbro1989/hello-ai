@@ -33,17 +33,17 @@ controls.maxPolarAngle = Math.PI / 2;
 const loader = new GLTFLoader();
 
 function loadGLTFModel(url) {
-  loader.load(
-    url,
-    function (gltf) {
-      scene.add(gltf.scene);
-      console.log('Model loaded successfully!', gltf);
-    },
-    undefined,
-    function (error) {
-      console.error('An error occurred while loading the model:', error);
-    }
-  );
+	loader.load(
+		url,
+		function (gltf) {
+			scene.add(gltf.scene);
+			console.log('Model loaded successfully!', gltf);
+		},
+		undefined,
+		function (error) {
+			console.error('An error occurred while loading the model:', error);
+		}
+	);
 }
 
 // --- Sample GLTF Model Loading (for testing) ---
@@ -53,19 +53,19 @@ loadGLTFModel(sampleModelUrl);
 
 // 6. Animation Loop
 function animate() {
-  requestAnimationFrame(animate);
+	requestAnimationFrame(animate);
 
-  controls.update(); // only required if controls.enableDamping is set to true
+	controls.update(); // only required if controls.enableDamping is set to true
 
-  renderer.render(scene, camera);
+	renderer.render(scene, camera);
 }
 animate();
 
 // Handle window resize
 window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 // Chat Interface Logic
@@ -74,34 +74,55 @@ const chatInput = document.getElementById('chat-input');
 const messagesDiv = document.getElementById('messages');
 
 chatForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const message = chatInput.value.trim();
-  if (message) {
-    addMessage(message, 'user');
-    chatInput.value = '';
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message }),
-      });
-      const data = await response.json();
-      addMessage(data.response, 'ai');
-    } catch (error) {
-      console.error('Error sending message to AI:', error);
-      addMessage('Error: Could not connect to AI.', 'ai');
-    }
-  }
+	event.preventDefault();
+	const message = chatInput.value.trim();
+	if (message) {
+		addMessage(message, 'user');
+		chatInput.value = '';
+		try {
+			const response = await fetch('/api/chat', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ message }),
+			});
+			const data = await response.json();
+			addMessage(data.response, 'ai');
+		} catch (error) {
+			console.error('Error sending message to AI:', error);
+			addMessage('Error: Could not connect to AI.', 'ai');
+		}
+	}
 });
 
 function addMessage(text, sender) {
-  const messageElement = document.createElement('div');
-  messageElement.classList.add('message', sender);
-  messageElement.textContent = text;
-  messagesDiv.appendChild(messageElement);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+	const messageElement = document.createElement('div');
+	messageElement.classList.add('message', sender);
+	messageElement.textContent = text;
+	messagesDiv.appendChild(messageElement);
+	messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
 import './animation/animationDemo.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+    const app = document.getElementById('app');
+    
+    // Add version info
+    const version = document.createElement('p');
+    version.textContent = `Version: ${new Date().toISOString()}`;
+    version.style.color = '#666';
+    version.style.fontSize = '0.8em';
+    app.appendChild(version);
+
+    // Test KV connection
+    fetch('/test-kv')
+        .then(response => response.json())
+        .then(data => {
+            const status = document.createElement('pre');
+            status.textContent = JSON.stringify(data, null, 2);
+            app.appendChild(status);
+        })
+        .catch(error => console.error('Error:', error));
+});
