@@ -158,6 +158,9 @@ dist
 .yarn/install-state.gz
 .pnp.\*
 
+# hello-ai project root (should not be tracked)
+hello-ai/
+
 # wrangler project
 
 .dev.vars*
