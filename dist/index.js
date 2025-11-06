@@ -9,7 +9,7 @@ var API = {
 var KV_KEYS = {
   TYPEDEF: "typedef",
   MODELS: "models",
-  MODEL_OB3: (id) => `model_${id}.ob3`
+  MODEL_OB3: (id) => `models/${id}.ob3`
 };
 
 // src/rsmv/constants.ts
@@ -1884,6 +1884,7 @@ var FileParser = class _FileParser {
     return res;
   }
   read(buffer, source, args) {
+    console.log("FileParser.read - source (v2): ", source);
     let state = {
       isWrite: false,
       buffer,
@@ -1893,7 +1894,7 @@ var FileParser = class _FileParser {
       scan: 0,
       endoffset: buffer.byteLength,
       args: {
-        ...source.getDecodeArgs(),
+        ...source && source.getDecodeArgs ? source.getDecodeArgs() : {},
         ...args
       }
     };
@@ -1935,10 +1936,8 @@ var parsePromise = null;
 function getParsers(env) {
   if (parsePromise === null) {
     parsePromise = (async () => {
-      const typedefResponse = await fetch("/typedef.json");
-      const typedefContent = await typedefResponse.json();
-      const modelsResponse = await fetch("/models.json");
-      const modelsContent = await modelsResponse.json();
+      const typedefContent = await env.ASSETS.get("typedef.json", "json");
+      const modelsContent = await env.ASSETS.get("models.json", "json");
       const modelsFileParser = await FileParser.init(modelsContent, typedefContent);
       return { models: modelsFileParser };
     })();
@@ -1969,11 +1968,16 @@ var index_default = {
         return new Response(modelsJSON || "[]", { headers: { "Content-Type": "application/json" } });
       }
       if (url.pathname.startsWith("/api/model/")) {
-        const id = url.pathname.split("/").pop();
-        if (!id) return new Response("Model ID required", { status: 400 });
-        const ob3Binary = await env.CACHE_KV.get(KV_KEYS.MODEL_OB3(id), "arrayBuffer");
+        const idWithExtension = url.pathname.split("/").pop();
+        if (!idWithExtension) return new Response("Model ID required", { status: 400 });
+        const id = idWithExtension.replace(".ob3", "");
+        console.log(`Attempting to load model with ID: ${id}`);
+        const modelKvKey = KV_KEYS.MODEL_OB3(id);
+        console.log(`Constructed KV key for model: ${modelKvKey}`);
+        const ob3Binary = await env.ASSETS.get(modelKvKey, "arrayBuffer");
+        console.log("ob3Binary from KV:", ob3Binary);
         if (!ob3Binary) return new Response("Model not found", { status: 404 });
-        const parsedModel = await parsers.models.read(new Uint8Array(ob3Binary));
+        const parsedModel = await parsers.models.read(new Uint8Array(ob3Binary), { getDecodeArgs: () => ({}) });
         return new Response(JSON.stringify(parsedModel), { headers: { "Content-Type": "application/json" } });
       }
     }

@@ -1,110 +1,95 @@
-// src/rsmvLoader.ts
-import * as THREE from './three.module.js';
-import { PARSER_CONFIG } from './constants';
+import * as THREE from 'three';
 
-export interface RSMVModelData {
-  geometry: THREE.BufferGeometry;
-  materials: THREE.Material | THREE.Material[];
-  animations?: THREE.AnimationClip[];
+class SafeReader {
+  private view: DataView;
+  private offset = 0;
+
+  constructor(private buffer: ArrayBuffer) {
+    this.view = new DataView(buffer);
+  }
+
+  private ensure(bytes: number) {
+    if (this.offset + bytes > this.view.byteLength)
+      throw new RangeError(
+        `Attempt to read ${bytes} bytes past end (offset ${this.offset}/${this.view.byteLength})`
+      );
+  }
+
+  readUint8() {
+    this.ensure(1);
+    return this.view.getUint8(this.offset++);
+  }
+
+  readUint16() {
+    this.ensure(2);
+    const v = this.view.getUint16(this.offset, true);
+    this.offset += 2;
+    return v;
+  }
+
+  readFloat32() {
+    this.ensure(4);
+    const v = this.view.getFloat32(this.offset, true);
+    this.offset += 4;
+    return v;
+  }
+
+  readString(length: number) {
+    this.ensure(length);
+    const bytes = new Uint8Array(this.buffer, this.offset, length);
+    this.offset += length;
+    return new TextDecoder().decode(bytes);
+  }
+
+  remaining() {
+    return this.view.byteLength - this.offset;
+  }
 }
 
-/**
- * Fetches a model from the given URL and parses it into Three.js model data.
- * Supports geometry, UVs, vertex colors, materials, and animation placeholders.
- */
-export async function loadRSMV(url: string): Promise<RSMVModelData> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Failed to load RSMV: ${response.statusText}`);
-  const arrayBuffer = await response.arrayBuffer();
-  return parseRSMV(arrayBuffer);
-}
+export function parseRSMV(arrayBuffer: ArrayBuffer): THREE.Mesh {
+  const reader = new SafeReader(arrayBuffer);
+  try {
+    // Header example: version, vertexCount, faceCount
+    const version = reader.readUint8();
+    const vertexCount = reader.readUint16();
+    const faceCount = reader.readUint16();
 
-/**
- * Parses an ArrayBuffer containing an RSMV/OB3 file into Three.js geometry and materials.
- * @param buffer - ArrayBuffer of the RSMV/OB3 file
- */
-export function parseRSMV(buffer: ArrayBuffer): RSMVModelData {
-  const dataView = new DataView(buffer);
-  let offset = 0;
+    const vertices: number[] = [];
+    const faces: number[] = [];
 
-  // --- Read header ---
-  const vertexCount = dataView.getUint32(offset, true); offset += 4;
-  const indexCount = dataView.getUint32(offset, true); offset += 4;
-  const materialCount = dataView.getUint32(offset, true); offset += 4; // Assuming 32-bit for material count
+    for (let i = 0; i < vertexCount; i++) {
+      const x = reader.readFloat32();
+      const y = reader.readFloat32();
+      const z = reader.readFloat32();
+      vertices.push(x, y, z);
+    }
 
-  if (vertexCount > PARSER_CONFIG.MAX_VERTICES) {
-    throw new Error(`Vertex count exceeds maximum allowed: ${vertexCount}`);
-  }
-  if (indexCount > PARSER_CONFIG.MAX_INDICES) {
-    throw new Error(`Index count exceeds maximum allowed: ${indexCount}`);
-  }
+    for (let i = 0; i < faceCount; i++) {
+      const a = reader.readUint16();
+      const b = reader.readUint16();
+      const c = reader.readUint16();
+      faces.push(a, b, c);
+    }
 
-  // --- Geometry arrays ---
-  const positions = new Float32Array(vertexCount * 3);
-  const normals = new Float32Array(vertexCount * 3);
-  const uvs = new Float32Array(vertexCount * 2);
-  const colors = new Float32Array(vertexCount * 3); // Assuming RGB, 3 components
-
-  // --- Read vertices ---
-  for (let i = 0; i < vertexCount; i++) {
-    // x, y, z
-    positions[i * 3 + 0] = dataView.getFloat32(offset, true); offset += 4;
-    positions[i * 3 + 1] = dataView.getFloat32(offset, true); offset += 4;
-    positions[i * 3 + 2] = dataView.getFloat32(offset, true); offset += 4;
-
-    // nx, ny, nz
-    normals[i * 3 + 0] = dataView.getFloat32(offset, true); offset += 4;
-    normals[i * 3 + 1] = dataView.getFloat32(offset, true); offset += 4;
-    normals[i * 3 + 2] = dataView.getFloat32(offset, true); offset += 4;
-
-    // u, v
-    uvs[i * 2 + 0] = dataView.getFloat33(offset, true); offset += 4; // Typo: getFloat33 -> getFloat32
-    uvs[i * 2 + 1] = dataView.getFloat32(offset, true); offset += 4;
-
-    // r, g, b (assuming 32-bit float for color components)
-    colors[i * 3 + 0] = dataView.getFloat32(offset, true); offset += 4;
-    colors[i * 3 + 1] = dataView.getFloat32(offset, true); offset += 4;
-    colors[i * 3 + 2] = dataView.getFloat32(offset, true); offset += 4;
-  }
-
-  // --- Read indices ---
-  const indices = new Uint32Array(indexCount);
-  for (let i = 0; i < indexCount; i++) {
-    indices[i] = dataView.getUint32(offset, true);
-    offset += 4;
-  }
-
-  // --- Read materials ---
-  const materials: THREE.Material[] = [];
-  for (let i = 0; i < materialCount; i++) {
-    // Example: read a simple diffuse color (RGBA, 32-bit floats)
-    const r = dataView.getFloat32(offset, true); offset += 4;
-    const g = dataView.getFloat32(offset, true); offset += 4;
-    const b = dataView.getFloat32(offset, true); offset += 4;
-    const a = dataView.getFloat32(offset, true); offset += 4;
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geom.setIndex(faces);
+    geom.computeVertexNormals();
 
     const mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(r, g, b),
-      transparent: a < 1,
-      opacity: a,
-      vertexColors: true, // Enable vertex colors
+      color: 0x00ffcc,
+      metalness: 0.2,
+      roughness: 0.8,
     });
-    materials.push(mat);
+
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.userData.version = version;
+    mesh.userData.vertexCount = vertexCount;
+    mesh.userData.faceCount = faceCount;
+
+    return mesh;
+  } catch (err: any) {
+    console.error('RSMV parse failed:', err);
+    throw err;
   }
-
-  // --- Build BufferGeometry ---
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-  geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3)); // Use 3 components for RGB
-  geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-
-  geometry.computeBoundingBox();
-  geometry.computeBoundingSphere();
-
-  // --- Placeholder animations ---
-  const animations: THREE.AnimationClip[] = []; // Populate later
-
-  return { geometry, materials, animations };
 }

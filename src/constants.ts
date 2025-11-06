@@ -30,7 +30,7 @@ export const ORBIT_CONTROLS_URL = 'https://unpkg.com/three@0.158.0/examples/jsm/
 export const KV_KEYS = {
   TYPEDEF: 'typedef',
   MODELS: 'models',
-  MODEL_OB3: (id: string | number) => `model_${id}.ob3`
+  MODEL_OB3: (id: string | number) => `models/${id}.ob3`
 };
 
 // -------------------------

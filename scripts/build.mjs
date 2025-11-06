@@ -94,6 +94,9 @@ jsonFiles.forEach(({ name, isJsonC }) => {
 const tempPrebuildDir = path.join(projectRoot, 'tmp_prebuild');
 if (!fs.existsSync(tempPrebuildDir)) {
     fs.mkdirSync(tempPrebuildDir);
+} else {
+    fs.rmSync(tempPrebuildDir, { recursive: true, force: true });
+    fs.mkdirSync(tempPrebuildDir);
 }
 execSync(`npx esbuild src/rsmv/opcode_reader.ts src/rsmv/opdecoder.ts --bundle --outdir=${tempPrebuildDir} --format=esm --external:@cloudflare/workers-types`, { stdio: 'inherit' });
 

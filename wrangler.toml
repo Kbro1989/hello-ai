@@ -1,9 +1,4 @@
 name = "hello-ai"
-main = "src/index.ts"
-compatibility_date = "2025-11-06" # Updated to today's date
-
-[site]
-bucket = "./public"
 
 [[kv_namespaces]]
 binding = "ASSETS"
@@ -15,9 +10,6 @@ id = "328b510e11f94357b76bf7affa50830b"
 
 [ai]
 binding = "AI"
-
-[build]
-command = "node scripts/build.mjs"
 
 [observability]
 enabled = true

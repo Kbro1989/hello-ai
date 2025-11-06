@@ -21,14 +21,14 @@
   <div id="canvas-container"></div>
 
   <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
-    import { OrbitControls } from 'https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js';
+        import * as THREE from './js/three.module.js';
+        import { OrbitControls } from './js/OrbitControls.js';
     import { createThreeMeshFromRsmvModel } from './js/rsmvThreeLoader.js';
 
     // --- Fetch typedef JSON from KV ---
     async function loadTypedef() {
       try {
-        const res = await fetch('/typedef');
+        const res = await fetch('/api/typedefs'); // Corrected to /api/typedefs
         const data = await res.json();
         document.getElementById('typedef').textContent = JSON.stringify(data, null, 2);
         return data;
@@ -42,12 +42,12 @@
     const typedef = await loadTypedef();
 
     // --- Sample models list ---
-    const modelsList = ['Model 0', 'Model 1', 'Model 2'];
+    const modelsList = ['Model 123'];
     const modelsDiv = document.getElementById('models');
     modelsList.forEach((name, i) => {
       const btn = document.createElement('button');
       btn.textContent = name;
-      btn.onclick = () => loadModel(i);
+      btn.onclick = () => loadModel(123); // Directly use 123 as the model ID
       modelsDiv.appendChild(btn);
     });
 

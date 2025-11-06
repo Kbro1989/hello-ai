@@ -1,74 +1,5 @@
-import * as THREE from './js/three.module.js';
 import { OrbitControls } from './js/OrbitControls.js';
-
-// HSL and RGB conversion functions (copied from src/rsmv/utils.ts)
-function HSL2RGBfloat(hsl) {
-    var h = hsl[0];
-    var s = hsl[1];
-    var l = hsl[2];
-    var r, g, b;
-
-    if (s == 0) {
-        r = g = b = l; // achromatic
-    }
-    else {
-        var hue2rgb = function hue2rgb(p, q, t) {
-            if (t < 0) t += 1;
-            if (t > 1) t -= 1;
-            if (t < 1 / 6) return p + (q - p) * 6 * t;
-            if (t < 1 / 2) return q;
-            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-            return p;
-        }
-
-        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        var p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1 / 3);
-        g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1 / 3);
-    }
-
-    return [r, g, b];
-}
-
-function HSL2RGB(hsl) {
-    let rgb = HSL2RGBfloat(hsl);
-    return [Math.round(rgb[0] * 255), Math.round(rgb[1] * 255), Math.round(rgb[2] * 255)];
-}
-
-function RGB2HSL(r, g, b) {
-    r /= 255, g /= 255, b /= 255;
-    var max = Math.max(r, g, b), min = Math.min(r, g, b);
-    var h = 0;
-    var s = 0;
-    let l = (max + min) / 2;
-
-    if (max != min) {
-        var d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        switch (max) {
-            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-            case g: h = (b - r) / d + 2; break;
-            case b: h = (r - g) / d + 4; break;
-        }
-        h /= 6;
-    }
-    return [h, s, l];
-}
-
-function HSL2packHSL(h, s, l) {
-    if (h < 0) { h += 1; }
-    return (Math.round(h * 63) << 10) | (Math.round(s * 7) << 7) | (Math.round(l * 127));
-}
-
-function packedHSL2HSL(hsl) {
-    var h = ((hsl >> 10) & 0x3F) / 63.0;
-    var s = ((hsl >> 7) & 0x7) / 7.0;
-    var l = (hsl & 0x7F) / 127.0;
-    if (h > 0.5)
-        h = h - 1.0;
-    return [h, s, l];
-}
+import { parseRSMV } from '../src/rsmvLoader.ts'; // Import the new parser
 
 // 1. Scene Setup
 const scene = new THREE.Scene();
@@ -101,8 +32,7 @@ controls.maxPolarAngle = Math.PI / 2;
 
 let currentModel = null;
 
-// RuneScape model loading
-function loadRuneScapeModel(modelData) {
+async function loadModel(modelId) {
     if (currentModel) {
         scene.remove(currentModel);
         // Dispose of previous model's geometry and material
@@ -118,82 +48,45 @@ function loadRuneScapeModel(modelData) {
         });
     }
 
-    const modelGroup = new THREE.Group();
-
-    modelData.meshes.forEach(meshData => {
-        const geometry = new THREE.BufferGeometry();
-
-        // Set attributes
-        geometry.setAttribute('position', meshData.attributes.pos);
-        if (meshData.attributes.color) {
-            geometry.setAttribute('color', meshData.attributes.color);
-        }
-        if (meshData.attributes.normals) {
-            geometry.setAttribute('normal', meshData.attributes.normals);
-        }
-        if (meshData.attributes.texuvs) {
-            geometry.setAttribute('uv', meshData.attributes.texuvs);
-        }
-        // Add other attributes as needed (e.g., skinids, skinweights, boneids, boneweights)
-
-        // Set index
-        geometry.setIndex(meshData.indices);
-
-        // Create material
-        let material;
-        if (meshData.attributes.color) {
-            material = new THREE.MeshPhongMaterial({ vertexColors: true });
-        } else {
-            material = new THREE.MeshPhongMaterial({ color: 0xaaaaaa }); // Default color if no vertex colors
+    try {
+        const response = await fetch(`/api/model/${modelId}`);
+        if (!response.ok) {
+            console.error("Failed to fetch model:", await response.text());
+            return;
         }
 
-        const mesh = new THREE.Mesh(geometry, material);
-        modelGroup.add(mesh);
-    });
+        const modelData = await response.arrayBuffer();
+        const mesh = parseRSMV(modelData);
+        currentModel = mesh;
+        scene.add(currentModel);
+        console.log('RuneScape model loaded and added to scene.', currentModel);
 
-    currentModel = modelGroup;
-    scene.add(currentModel);
-    console.log('RuneScape model loaded and added to scene.', currentModel);
+        // Center the camera on the new model
+        const box = new THREE.Box3().setFromObject(currentModel);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fov = camera.fov * (Math.PI / 180);
+        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+        cameraZ *= 1.5; // Add some padding
 
-    // Center the camera on the new model
-    const box = new THREE.Box3().setFromObject(currentModel);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const fov = camera.fov * (Math.PI / 180);
-    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-    cameraZ *= 1.5; // Add some padding
+        camera.position.set(center.x, center.y, center.z + cameraZ);
+        controls.target.set(center.x, center.y, center.z);
+        controls.update();
 
-    camera.position.set(center.x, center.y, center.z + cameraZ);
-    controls.target.set(center.x, center.y, center.z);
-    controls.update();
+    } catch (error) {
+        console.error('Error fetching or parsing model:', error);
+    }
 }
 
 // Color changing logic
 const colorInput = document.getElementById('model-color');
 colorInput.addEventListener('input', (event) => {
     const hexColor = event.target.value;
-    const r = parseInt(hexColor.substring(1, 3), 16);
-    const g = parseInt(hexColor.substring(3, 5), 16);
-    const b = parseInt(hexColor.substring(5, 7), 16);
 
     if (currentModel) {
         currentModel.traverse(object => {
-            if (object.isMesh && object.geometry.attributes.color) {
-                const colors = object.geometry.attributes.color.array;
-                const [h, s, l] = RGB2HSL(r, g, b);
-                const packedHSL = HSL2packHSL(h, s, l);
-                const [newR, newG, newB] = HSL2RGB(packedHSL2HSL(packedHSL));
-
-                for (let i = 0; i < colors.length; i += 4) {
-                    colors[i] = newR;
-                    colors[i + 1] = newG;
-                    colors[i + 2] = newB;
-                    // Alpha remains unchanged
-                }
-                object.geometry.attributes.color.needsUpdate = true;
-            } else if (object.isMesh && object.material) {
-                // If no vertex colors, try to update material color
+            if (object.isMesh && object.material) {
                 if (Array.isArray(object.material)) {
                     object.material.forEach(material => {
                         if (material.color) {
@@ -251,12 +144,8 @@ saveButton.addEventListener('click', async () => {
     }
 });
 
-fetch('/api/model/123') // Using a placeholder ID for now
-    .then(response => response.json())
-    .then(modelData => {
-        loadRuneScapeModel(modelData);
-    })
-    .catch(error => console.error('Error fetching model:', error));
+// Initial model load
+loadModel('123'); // Using a placeholder ID for now
 
 // 6. Animation Loop
 function animate() {
@@ -312,8 +201,6 @@ function addMessage(text, sender) {
 	messagesDiv.appendChild(messageElement);
 	messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
-
-import './animation/animationDemo.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const app = document.getElementById('app');

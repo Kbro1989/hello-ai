@@ -158,6 +158,7 @@ export class FileParser<T> {
 	}
 
 	read(buffer: Uint8Array, source: CacheFileSource, args?: Record<string, any>) {
+        console.log('FileParser.read - source (v2): ', source);
 		let state: opcode_reader.DecodeState = {
 			isWrite: false,
 			buffer,
@@ -167,7 +168,7 @@ export class FileParser<T> {
 			scan: 0,
 			endoffset: buffer.byteLength,
 			args: {
-				...source.getDecodeArgs(),
+				...(source && source.getDecodeArgs ? source.getDecodeArgs() : {}),
 				...args
 			}
 		};
@@ -223,11 +224,9 @@ export function getParsers(env: Env): Promise<ReturnType<typeof allParsers>> {
 
         parsePromise = (async () => {
             // In development, fetch from local server as static assets
-            const typedefResponse = await fetch('/typedef.json');
-            const typedefContent = await typedefResponse.json();
+            const typedefContent = await env.ASSETS.get('typedef.json', 'json');
 
-            const modelsResponse = await fetch('/models.json');
-            const modelsContent = await modelsResponse.json();
+            const modelsContent = await env.ASSETS.get('models.json', 'json');
 
             const modelsFileParser = await FileParser.init<import("../generated/models").models>(modelsContent, typedefContent);
 
