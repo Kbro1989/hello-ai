@@ -43,6 +43,12 @@ export default {
         console.log(`Constructed KV key for model: ${modelKvKey}`);
         const ob3Binary = await env.ASSETS.get(modelKvKey, 'arrayBuffer');
         console.log('ob3Binary from KV:', ob3Binary);
+        if (ob3Binary) {
+          console.log('ob3Binary byteLength:', ob3Binary.byteLength);
+          // Log first 10 bytes for inspection
+          const uint8Array = new Uint8Array(ob3Binary);
+          console.log('ob3Binary first 10 bytes:', uint8Array.slice(0, 10).join(','));
+        }
         if (!ob3Binary) return new Response('Model not found', { status: 404 });
 
         let parsedModel;

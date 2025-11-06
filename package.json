@@ -9,7 +9,7 @@
     "dev": "wrangler dev",
     "start": "wrangler dev",
     "deploy": "wrangler deploy",
-    "build": "wrangler deploy",
+    "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm --platform=browser",
     "types": "wrangler types",
     "test": "vitest",
     "model-viewer": "wrangler dev src/model-viewer.ts"
