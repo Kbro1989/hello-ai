@@ -1,0 +1,57 @@
+["struct",
+	["format","ubyte"],
+	["version","ubyte"],
+	["always_0f","ubyte"],
+
+	["meshCount","ubyte"],
+	["unkCount0","ubyte"],
+	["unkCount1","ubyte"],
+	["unkCount2","ubyte"],
+	["unkCount3","ubyte"],
+	["unkCount4",["match",{"version>=5":"ubyte","other":0}]] as any,
+
+	["meshes",["opt","version<=3",["array",["ref","meshCount"],["struct",
+		["$groupFlags","ubyte"],
+		["unkint","uint"],
+		["materialArgument","ushort le"],
+		["faceCount","ushort le"],
+
+		["hasVertices",["ref","$groupFlags",[0,1]]],
+		["hasVertexAlpha",["ref","$groupFlags",[1,1]]],
+		["hasFaceBones",["ref","$groupFlags",[2,1]]],
+		["hasBoneIds",["ref","$groupFlags",[3,1]]],
+		["isHidden",["ref","$groupFlags",[4,1]]],
+		["hasSkin",["ref","$groupFlags",[5,1]]],
+
+		
+		["colourBuffer",["opt",["hasVertices",1],["buffer",["ref","faceCount"],"ushort"]]] as any,
+		["alphaBuffer",["opt",["hasVertexAlpha",1],["buffer",["ref","faceCount"],"ubyte"]]] as any,
+		["faceboneidBuffer",["opt",["hasFaceBones",1],["buffer",["ref","faceCount"],"ushort"]]] as any,
+
+		//the length field for the indexbuffer can overflow when the model has >22k faces!!
+		//unclear if the the client has some alternative way to get it
+		["indexBuffers",["array","ubyte",["buffer","ushort le","ushort"]]] as any,
+
+		["vertexCount",["match",["ref","hasVertices"],{"=1":"ushort le","=0":0}]] as any,
+		["positionBuffer",["opt",["hasVertices",1],["buffer",["ref","vertexCount"],"short",3]]],
+		["normalBuffer",["opt",["hasVertices",1],["match","buildnr",{
+			">=887":["buffer",["ref","vertexCount"],"byte",3],
+			">=0":["buffer",["ref","vertexCount"],"short",3]
+		}]]] as any,
+		["tagentBuffer",["opt",["hasVertices",1],["match","buildnr",{
+			//TODO exact buildnr unknown
+			">=906":["buffer",["ref","vertexCount"],"short",2],
+			">=0":"null"
+		}]]] as any,
+		["uvBuffer",["opt",["hasVertices",1],["match","buildnr",{
+			">=887":["buffer",["ref","vertexCount"],"ushort",2],
+			">=0":["buffer",["ref","vertexCount"],"float",2]
+		}]]] as any,
+		["boneidBuffer",["opt",["hasBoneIds",1],["buffer",["ref","vertexCount"],"ushort"]]] as any,
+		
+		["skin",["opt",["hasSkin",1],["struct",
+			["skinWeightCount","uint le"],
+			["skinBoneBuffer",["buffer",["ref","skinWeightCount"],"ushort",1]],
+			["skinWeightBuffer",["buffer",["ref","skinWeightCount"],"ubyte",1]]
+		]]]
+	]]],

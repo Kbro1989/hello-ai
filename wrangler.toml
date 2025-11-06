@@ -1,6 +1,6 @@
 name = "hello-ai"
 main = "src/index.ts"
-compatibility_date = "2025-11-05"
+compatibility_date = "2025-11-06" # Updated to today's date
 
 [site]
 bucket = "./public"
@@ -8,11 +8,28 @@ bucket = "./public"
 [[kv_namespaces]]
 binding = "ASSETS"
 id = "9b6cce9e90644ff28a2cff2c113811ca"
-preview_id = "4a452d73838945b5a3065ef63c68d951"
+
+[[kv_namespaces]]
+binding = "CACHE_KV"
+id = "328b510e11f94357b76bf7affa50830b"
 
 [ai]
 binding = "AI"
 
-[dev]
-port = 8787
-ip = "127.0.0.1"
+[build]
+command = "node scripts/build.mjs"
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+persist = true
+invocation_logs = true
+head_sampling_rate = 1
+
+[observability.traces]
+enabled = true
+persist = true
+head_sampling_rate = 1

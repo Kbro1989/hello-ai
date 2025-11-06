@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-11-04T05:04:15.603Z",
+  "total": 0,
+  "passed": 0,
+  "failed": 0,
+  "skipped": 0,
+  "flags": {
+    "dryRun": false,
+    "preview": false,
+    "skip": false
+  },
+  "tests": []
+}

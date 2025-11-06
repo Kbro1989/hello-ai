@@ -1,0 +1,41 @@
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+[Chunk 1 processed] ## Building and Running
+
+The project uses `wrangler` for Cloudflare Worker development and deployment, and `vitest` for testing.
+
+### Available Scripts:
+
+*   `npm run deploy`: Deploys the Cloudflare Worker to production.
+*   `npm run dev`: Starts a local development server for the Cloudflare Worker.
+*   `npm run start`: Alias for `npm run dev`.
+*   `npm run test`: Runs tests using Vitest.
+*   `npm run cf-typegen`: Generates Cloudflare Worker types.
+
+### Cloudflare Worker Configuration:
+
+The Cloudflare Worker is configured via `wrangler.toml`:
+
+*   `name`: `hello-ai`
+*   `main`: `src/index.ts` (main entry point)
+*   `compatibility_date`: `2025-10-11`
+*   `workers_dev`: `true`
+*   `site.bucket`: `./public` (path to static assets)
+*   `site.entry-point`: `./`

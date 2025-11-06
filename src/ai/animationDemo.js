@@ -63,8 +63,8 @@ function animate(deltaTime) {
 		console.log('--- Switching to CINEMATIC ---');
 	}
 
-	requestAnimationFrame((dt) => animate(dt * 0.001));
+	// requestAnimationFrame is a browser-specific API and should not be called in a Worker.
 }
 
-// Start loop
-animate(0.016);
+// The animation loop should not be started in the Worker environment.
+// animate(0.016);

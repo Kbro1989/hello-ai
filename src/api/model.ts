@@ -1,99 +1,100 @@
-// src/api/model.ts
-import { unzipSync } from 'fflate';
-import { handleProxy } from './proxy'; // Assuming proxy is in the same directory
+import { IRequest, Router } from 'itty-router';
+import { parseOb3Model, ModelData } from '../rsmv/rt7model';
+import { packedHSL2HSL, HSL2RGB } from '../rsmv/utils';
+import { CacheFileSource } from '../rsmv/cache';
+import { WorkerCacheFileSource } from '../services/cacheService';
+import { Env } from '../index';
 
-// Placeholder for opDecoder - will be implemented later
-function opDecoder(modelBytes: Uint8Array): any {
-	// For now, just return a placeholder JSON
-	return {
-		message: 'Model bytes received, opDecoder not yet implemented.',
-		byteLength: modelBytes.byteLength,
-		// You can add a base64 representation of the bytes for debugging if needed
-		// modelBytesBase64: btoa(String.fromCharCode(...modelBytes))
-	};
-}
+const router = Router();
 
-async function extractFileFromZip(arrayBuffer: ArrayBuffer, filename: string): Promise<Uint8Array | null> {
-	const data = new Uint8Array(arrayBuffer);
-	const unzipped = unzipSync(data);
-	for (const key of Object.keys(unzipped)) {
-		if (key.endsWith(filename)) {
-			return unzipped[key];
-		}
-	}
-	return null;
-}
+router.get('/api/model/:id', async (request: IRequest, env: Env) => {
+    const modelId = request.params?.id;
 
-export async function handleModel(request: Request): Promise<Response> {
-	const url = new URL(request.url);
-	const cacheId = url.searchParams.get('cache');
-	const group = url.searchParams.get('group');
-	const file = url.searchParams.get('file');
-	// const buildnr = url.searchParams.get("buildnr"); // We might need this later
+    try {
+        const cacheSource = new WorkerCacheFileSource(env);
 
-	if (!cacheId || !group || !file) {
-		return new Response(JSON.stringify({ error: 'missing query params: cache, group, or file' }), {
-			status: 400,
-			headers: { 'content-type': 'application/json' },
-		});
-	}
+        // Fetch the raw model file from a conceptual public/models directory
+        // In a real scenario, this would come from a game cache or storage.
+        const modelKey = `models/${modelId}.ob3`;
+        const rawModelData = await env.ASSETS.get(modelKey, { type: "arrayBuffer" });
 
-	try {
-		// Fetch the disk.zip using our proxy
-		const proxyRequest = new Request(new URL(`/api/proxy?openrs2=${encodeURIComponent(cacheId)}`, url).toString(), request);
-		const zipResponse = await handleProxy(proxyRequest);
+        if (!rawModelData) {
+            return new Response(`Model ${modelId} not found in KV`, { status: 404 });
+        }
 
-		if (!zipResponse.ok) {
-			return new Response(JSON.stringify({ error: `Failed to fetch OpenRS2 zip: ${zipResponse.status}` }), {
-				status: zipResponse.status,
-				headers: { 'content-type': 'application/json' },
-			});
-		}
+        const parsedModel: ModelData = await parseOb3Model(new Uint8Array(rawModelData), cacheSource);
 
-		const zipArrayBuffer = await zipResponse.arrayBuffer();
+        const simplifiedModel = {
+            positions: [],
+            colors: [],
+            indices: []
+        };
 
-		// Extract the relevant .dat2 and .idx files
-		// This is a simplified assumption. Real implementation needs to parse .idx to find offset/length in .dat2
-		const dat2Filename = `main_file_cache.dat2`; // Simplified
-		const idxFilename = `main_file_cache.idx${group}`; // Simplified
+        if (parsedModel.meshes && parsedModel.meshes.length > 0) {
+            let vertexOffset = 0;
+            parsedModel.meshes.forEach(mesh => {
+                // Extract positions
+                const posBuffer = mesh.attributes.pos.array;
+                for (let i = 0; i < posBuffer.length; i++) {
+                    simplifiedModel.positions.push(posBuffer[i]);
+                }
 
-		const dat2File = await extractFileFromZip(zipArrayBuffer, dat2Filename);
-		const idxFile = await extractFileFromZip(zipArrayBuffer, idxFilename);
+                // Extract colors
+                const colorBuffer = mesh.attributes.color ? mesh.attributes.color.array : null;
+                if (colorBuffer) {
+                    for (let i = 0; i < colorBuffer.length; i++) {
+                        simplifiedModel.colors.push(colorBuffer[i]);
+                    }
+                } else {
+                    // Default to white if no color buffer
+                    for (let i = 0; i < mesh.attributes.pos.count; i++) {
+                        simplifiedModel.colors.push(255, 255, 255, 255); // RGBA
+                    }
+                }
 
-		if (!dat2File || !idxFile) {
-			return new Response(JSON.stringify({ error: `Could not find ${dat2Filename} or ${idxFilename} in zip.` }), {
-				status: 404,
-				headers: { 'content-type': 'application/json' },
-			});
-		}
+                // Extract indices, adjusting for vertex offset
+                const indicesBuffer = mesh.indices.array;
+                for (let i = 0; i < indicesBuffer.length; i++) {
+                    simplifiedModel.indices.push(indicesBuffer[i] + vertexOffset);
+                }
+                vertexOffset += mesh.attributes.pos.count;
+            });
+        }
 
-		// Placeholder for actual model byte extraction from .dat2 using .idx
-		// This part requires parsing the .idx file to get the offset and length
-		// For now, we'll just return a placeholder with the file sizes
-		const modelBytes = new Uint8Array(0); // Placeholder
+        return new Response(JSON.stringify(simplifiedModel), {
+            headers: { 'Content-Type': 'application/json' },
+        });
+    } catch (error: any) {
+        console.error("Error fetching model:", error);
+        return new Response(`Error fetching model: ${error.message}`, { status: 500 });
+    }
+});
 
-		// Call the opDecoder placeholder
-		const decodedModel = opDecoder(modelBytes);
+router.post('/api/model/save', async (request: IRequest, env: Env) => {
+    try {
+        const { imageData, metadata } = await request.json();
 
-		return new Response(
-			JSON.stringify({
-				message: 'Successfully processed model request (simplified).',
-				cacheId,
-				group,
-				file,
-				dat2Size: dat2File.byteLength,
-				idxSize: idxFile.byteLength,
-				decodedModel: decodedModel,
-			}),
-			{
-				status: 200,
-				headers: { 'content-type': 'application/json' },
-			}
-		);
-	} catch (err: any) {
-		return new Response(JSON.stringify({ error: String(err.message ?? err) }), {
-			status: 500,
-			headers: { 'content-type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-		});
-	}
-}
+        if (!imageData || !metadata) {
+            return new Response('Missing imageData or metadata', { status: 400 });
+        }
+
+        const uniqueId = crypto.randomUUID();
+        const imageKey = `saved_models/image/${uniqueId}`;
+        const metadataKey = `saved_models/metadata/${uniqueId}`;
+
+        // Store image data (base64 string)
+        await env.ASSETS.put(imageKey, imageData);
+
+        // Store metadata (JSON string)
+        await env.ASSETS.put(metadataKey, JSON.stringify(metadata));
+
+        return new Response(JSON.stringify({ id: uniqueId, message: 'Model saved successfully' }), {
+            headers: { 'Content-Type': 'application/json' },
+        });
+    } catch (error: any) {
+        console.error("Error saving model:", error);
+        return new Response(`Error saving model: ${error.message}`, { status: 500 });
+    }
+});
+
+export default router;

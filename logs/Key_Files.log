@@ -1,0 +1,26 @@
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+[Chunk 1 processed] ## Key Files
+
+*   `src/index.ts`: The main entry point for the Cloudflare Worker. It now includes a minimal animation demo that runs a 10-step loop and logs per-frame easing values to the console.
+*   `src/loader.js`: Contains helper functions for animation, including `updateAnimations`, `cubicEaseInOut` (an easing function), and `createMultiPhaseEasingArray` (for generating easing arrays).
+*   `src/animationDemo.js`: Defines minimal mesh data, sets up walk and cinematic animations with easing curves, and orchestrates the animation loop.
+*   `wrangler.toml`: Configuration file for the Cloudflare Worker.
+*   `package.json`: Project manifest, defining scripts, dependencies, and development dependencies.
