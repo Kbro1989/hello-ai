@@ -1,6 +1,7 @@
 // src/index.ts
 import { KV_ASSETS, KV_CACHE, AI_BINDING, API, KV_KEYS } from './constants';
 import { getParsers } from './rsmv/opdecoder';
+import { parseSyntheticOb3 } from './utils/modelParser'; // Import the new parser
 
 export interface Env {
   ASSETS: KVNamespace; // Use KVNamespace for ASSETS
@@ -34,13 +35,24 @@ export default {
         return new Response(modelsJSON || '[]', { headers: { 'Content-Type': 'application/json' } });
       }
       if (url.pathname.startsWith('/api/model/')) {
-        const id = url.pathname.split('/').pop();
-        if (!id) return new Response('Model ID required', { status: 400 });
-        const ob3Binary = await env.CACHE_KV.get(KV_KEYS.MODEL_OB3(id), 'arrayBuffer');
+        const idWithExtension = url.pathname.split('/').pop();
+        if (!idWithExtension) return new Response('Model ID required', { status: 400 });
+        const id = idWithExtension.replace('.ob3', ''); // Remove .ob3 extension
+        console.log(`Attempting to load model with ID: ${id}`);
+        const modelKvKey = KV_KEYS.MODEL_OB3(id);
+        console.log(`Constructed KV key for model: ${modelKvKey}`);
+        const ob3Binary = await env.ASSETS.get(modelKvKey, 'arrayBuffer');
+        console.log('ob3Binary from KV:', ob3Binary);
         if (!ob3Binary) return new Response('Model not found', { status: 404 });
 
-        // Parse the binary data using rsmvParse.models
-        const parsedModel = await parsers.models.read(new Uint8Array(ob3Binary));
+        let parsedModel;
+        if (id === '123') {
+          // Use the synthetic parser for model ID 123
+          parsedModel = parseSyntheticOb3(new Uint8Array(ob3Binary));
+        } else {
+          // Use the rsmv parser for other models
+          parsedModel = await parsers.models.read(new Uint8Array(ob3Binary), { getDecodeArgs: () => ({}) });
+        }
         return new Response(JSON.stringify(parsedModel), { headers: { 'Content-Type': 'application/json' } });
       }
     }
