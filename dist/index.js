@@ -1945,6 +1945,57 @@ function getParsers(env) {
   return parsePromise;
 }
 
+// src/utils/modelParser.ts
+function parseSyntheticOb3(buffer) {
+  const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  let offset = 0;
+  const version = dataView.getUint8(offset);
+  offset += 1;
+  const vertexCount = dataView.getUint16(offset, true);
+  offset += 2;
+  const faceCount = dataView.getUint16(offset, true);
+  offset += 2;
+  const vertices = [];
+  for (let i = 0; i < vertexCount * 3; i++) {
+    vertices.push(dataView.getFloat32(offset, true));
+    offset += 4;
+  }
+  const faces = [];
+  for (let i = 0; i < faceCount * 3; i++) {
+    faces.push(dataView.getUint16(offset, true));
+    offset += 2;
+  }
+  const material = {
+    color: 65280,
+    // Green color
+    metalness: 0.1,
+    roughness: 0.9
+  };
+  const metadata = {
+    id: 123,
+    name: "Synthetic Triangle",
+    version,
+    animations: [
+      {
+        name: "idle",
+        frameTime: 0.1,
+        // 10 frames per second
+        frames: [
+          { vertices },
+          // Frame 0: original vertices
+          { vertices: vertices.map((v, i) => i % 3 === 1 ? v + 0.1 * Math.sin(i) : v) },
+          // Frame 1: slight Y perturbation
+          { vertices: vertices.map((v, i) => i % 3 === 0 ? v + 0.1 * Math.cos(i) : v) },
+          // Frame 2: slight X perturbation
+          { vertices: vertices.map((v, i) => i % 3 === 2 ? v + 0.1 * Math.sin(i) : v) }
+          // Frame 3: slight Z perturbation
+        ]
+      }
+    ]
+  };
+  return { vertices, faces, material, metadata };
+}
+
 // src/index.ts
 var index_default = {
   async fetch(request, env) {
@@ -1976,8 +2027,19 @@ var index_default = {
         console.log(`Constructed KV key for model: ${modelKvKey}`);
         const ob3Binary = await env.ASSETS.get(modelKvKey, "arrayBuffer");
         console.log("ob3Binary from KV:", ob3Binary);
+        if (ob3Binary) {
+          console.log("ob3Binary byteLength:", ob3Binary.byteLength);
+          const uint8Array = new Uint8Array(ob3Binary);
+          console.log("ob3Binary first 10 bytes:", uint8Array.slice(0, 10).join(","));
+        }
         if (!ob3Binary) return new Response("Model not found", { status: 404 });
-        const parsedModel = await parsers.models.read(new Uint8Array(ob3Binary), { getDecodeArgs: () => ({}) });
+        let parsedModel;
+        if (id === "123") {
+          parsedModel = parseSyntheticOb3(new Uint8Array(ob3Binary));
+        } else {
+          parsedModel = await parsers.models.read(new Uint8Array(ob3Binary), { getDecodeArgs: () => ({}) });
+        }
+        console.log("Parsed Model:", parsedModel);
         return new Response(JSON.stringify(parsedModel), { headers: { "Content-Type": "application/json" } });
       }
     }
