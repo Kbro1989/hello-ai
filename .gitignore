@@ -1,2 +1,6 @@
 # Temporary prebuild directory
 tmp_prebuild/
+dist/
+node_modules/
+.wrangler/
+.gemini/settings.json.orig

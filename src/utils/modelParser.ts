@@ -33,7 +33,19 @@ export function parseSyntheticOb3(buffer: Uint8Array): any {
   const metadata = {
     id: 123,
     name: "Synthetic Triangle",
-    version: version
+    version: version,
+    animations: [
+      {
+        name: "idle",
+        frameTime: 0.1, // 10 frames per second
+        frames: [
+          { vertices: vertices }, // Frame 0: original vertices
+          { vertices: vertices.map((v, i) => (i % 3 === 1) ? v + 0.1 * Math.sin(i) : v) }, // Frame 1: slight Y perturbation
+          { vertices: vertices.map((v, i) => (i % 3 === 0) ? v + 0.1 * Math.cos(i) : v) }, // Frame 2: slight X perturbation
+          { vertices: vertices.map((v, i) => (i % 3 === 2) ? v + 0.1 * Math.sin(i) : v) }, // Frame 3: slight Z perturbation
+        ]
+      }
+    ]
   };
 
   return { vertices, faces, material, metadata };

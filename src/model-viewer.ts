@@ -15,6 +15,8 @@ async function main() {
         const modelData = parseOb3Model(modelBuffer, cacheSource);
 
         console.log("Model data:", modelData);
+        console.log("Model material:", modelData.material);
+        debugger;
 
         // Next steps: convert to Three.js and render
 

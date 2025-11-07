@@ -12,6 +12,7 @@ export interface Env {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    try {
 
     // Serve index.html for the root path
     if (url.pathname === '/') {
@@ -59,6 +60,7 @@ export default {
           // Use the rsmv parser for other models
           parsedModel = await parsers.models.read(new Uint8Array(ob3Binary), { getDecodeArgs: () => ({}) });
         }
+        console.log('Parsed Model:', parsedModel); // Add this line for debugging
         return new Response(JSON.stringify(parsedModel), { headers: { 'Content-Type': 'application/json' } });
       }
     }
@@ -88,6 +90,10 @@ export default {
     }
 
     return new Response('Not Found', { status: 404 }); // Fallback if no other route matches
+    } catch (error: any) {
+      console.error('Error in fetch handler:', error.message, error.stack);
+      return new Response(`Internal Server Error: ${error.message}`, { status: 500 });
+    }
   }
 };
 

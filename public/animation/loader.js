@@ -1,16 +1,24 @@
 export function updateAnimations(mesh, deltaTime) {
-	// Placeholder for animation update logic
 	const ua = mesh.userData;
-	if (!ua.activeAnimation) return;
+	if (!ua.activeAnimation || !mesh.geometry || !mesh.geometry.attributes.position) return;
 
-	ua.accumTime += deltaTime;
-	const frameDuration = ua.activeAnimation.frameTime;
-	const totalFrames = ua.a.frames.length;
+	ua.accumTime = (ua.accumTime || 0) + deltaTime; // Initialize if undefined
+	ua.frame = ua.frame || 0; // Initialize if undefined
+
+	const activeAnimation = ua.activeAnimation;
+	const frameDuration = activeAnimation.frameTime;
+	const totalFrames = activeAnimation.frames.length;
 
 	if (ua.accumTime >= frameDuration) {
 		ua.accumTime -= frameDuration;
 		ua.frame = (ua.frame + 1) % totalFrames;
-		// In a real scenario, you'd update mesh geometry here based on ua.frame
+
+		const currentFrameData = activeAnimation.frames[ua.frame];
+		if (currentFrameData && currentFrameData.vertices) {
+			const positionAttribute = mesh.geometry.attributes.position;
+			positionAttribute.copyArray(currentFrameData.vertices);
+			positionAttribute.needsUpdate = true;
+		}
 	}
 }
 
