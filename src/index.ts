@@ -14,16 +14,6 @@ export default {
     const url = new URL(request.url);
     try {
 
-    // Serve index.html for the root path
-    if (url.pathname === '/') {
-      const indexHtml = await env.ASSETS.get('index.html', 'text');
-      if (indexHtml) {
-        return new Response(indexHtml, { headers: { 'Content-Type': 'text/html' } });
-      } else {
-        return new Response('Index HTML not found', { status: 404 });
-      }
-    }
-
     // Handle API routes
     if (url.pathname.startsWith('/api/')) {
       const parsers = await getParsers(env);
@@ -81,15 +71,10 @@ export default {
       return new Response(JSON.stringify(suggestion), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // Serve static assets from KV
+    // Serve static assets from KV using env.ASSETS.fetch
     // This should be the last resort if no other route matches
-    const asset = await env.ASSETS.get(url.pathname.substring(1), 'arrayBuffer');
-    if (asset) {
-      const mimeType = getMimeType(url.pathname);
-      return new Response(asset, { headers: { 'Content-Type': mimeType } });
-    }
+    return env.ASSETS.fetch(request);
 
-    return new Response('Not Found', { status: 404 }); // Fallback if no other route matches
     } catch (error: any) {
       console.error('Error in fetch handler:', error.message, error.stack);
       return new Response(`Internal Server Error: ${error.message}`, { status: 500 });
@@ -97,17 +82,4 @@ export default {
   }
 };
 
-// Helper function to determine MIME type based on file extension
-function getMimeType(pathname: string): string {
-  const ext = pathname.split('.').pop();
-  switch (ext) {
-    case 'html': return 'text/html';
-    case 'css': return 'text/css';
-    case 'js': return 'application/javascript';
-    case 'json': return 'application/json';
-    case 'ico': return 'image/x-icon';
-    case 'ob3': return 'application/octet-stream'; // For .ob3 model files
-    // Add more MIME types as needed
-    default: return 'application/octet-stream';
-  }
-}
+};
