@@ -13,6 +13,15 @@
 </head>
 <body>
   <div id="sidebar">
+    <h2>Upload Cache File</h2>
+    <div id="drop-zone">
+      <p>Drag & drop a .dat or .idx file here, or click to select</p>
+      <input type="file" id="file-input" accept=".dat,.idx" style="display: none;">
+    </div>
+    <div id="upload-progress" style="display: none;">
+      <progress id="progress-bar" value="0" max="100"></progress>
+      <span id="progress-text">0%</span>
+    </div>
     <h2>Available Models</h2>
     <div id="models"></div>
     <h2>Animations</h2>
@@ -43,6 +52,122 @@
     }
 
     const typedef = await loadTypedef();
+
+    // --- File Upload Logic ---
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const uploadProgress = document.getElementById('upload-progress');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+      if (files.length === 0) {
+        alert('No file selected.');
+        return;
+      }
+      const file = files[0];
+
+      // Validate file type
+      const validExtensions = ['.dat', '.idx'];
+      const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
+      if (!validExtensions.includes(fileExtension)) {
+        alert('Invalid file type. Please select a .dat or .idx file.');
+        return;
+      }
+
+      // Validate file size (50MB limit)
+      const maxSize = 50 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert('File is too large. Maximum size is 50MB.');
+        return;
+      }
+
+      readFile(file);
+    }
+
+    function readFile(file) {
+      const reader = new FileReader();
+
+      reader.onloadstart = () => {
+        uploadProgress.style.display = 'block';
+        progressBar.value = 0;
+        progressText.textContent = '0%';
+      };
+
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const percentLoaded = Math.round((e.loaded / e.total) * 100);
+          progressBar.value = percentLoaded;
+          progressText.textContent = `${percentLoaded}%`;
+        }
+      };
+
+      reader.onload = (e) => {
+        progressBar.value = 100;
+        progressText.textContent = '100%';
+        setTimeout(() => {
+          uploadProgress.style.display = 'none';
+        }, 500);
+        
+        // Assuming the parser function is available
+        loadRsmvModel(e.target.result);
+      };
+
+      reader.onerror = () => {
+        alert('Error reading file.');
+        uploadProgress.style.display = 'none';
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    function loadRsmvModel(data) {
+        if (currentModel) {
+            scene.remove(currentModel);
+        }
+        try {
+            const mesh = createThreeMeshFromRsmvModel(data, typedef);
+            currentModel = mesh;
+            scene.add(currentModel);
+
+            // Center camera on the new model
+            const box = new THREE.Box3().setFromObject(currentModel);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+            cameraZ *= 1.5; // Padding
+
+            camera.position.set(center.x, center.y, center.z + cameraZ);
+            controls.target.set(center.x, center.y, center.z);
+            controls.update();
+
+            displayAnimations(currentModel);
+
+        } catch (error) {
+            console.error('Error parsing or displaying model:', error);
+            alert('Failed to parse or display the model. See console for details.');
+        }
+    }
 
     // --- Sample models list ---
     const modelsList = ['Model 123'];
@@ -84,17 +209,27 @@
 
     // --- Placeholder for model loader ---
     let currentModel;
-    // Add a simple cube to the scene for testing
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-    console.log('Added a test cube to the scene.');
 
-    // Removed model loading and animation logic for now
-    // async function loadModel(index) { ... }
-    // function displayAnimations(model) { ... }
-    // function activateAnimation(model, animation) { ... }
+    function displayAnimations(model) {
+      const animationsDiv = document.getElementById('animations');
+      animationsDiv.innerHTML = '';
+      if (model.animations && model.animations.length > 0) {
+        model.animations.forEach(animation => {
+          const btn = document.createElement('button');
+          btn.textContent = animation.name;
+          btn.onclick = () => activateAnimation(model, animation);
+          animationsDiv.appendChild(btn);
+        });
+      } else {
+        animationsDiv.textContent = 'No animations in this model.';
+      }
+    }
+
+    function activateAnimation(model, animation) {
+        // This is a placeholder for animation activation logic
+        console.log(`Activating animation: ${animation.name}`);
+        // You would typically use THREE.AnimationMixer here
+    }
 
     let lastFrameTime = 0;
     function animate(currentTime) {
@@ -102,10 +237,6 @@
 
       const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
       lastFrameTime = currentTime;
-
-      // Rotate the cube for visual confirmation
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
 
       controls.update();
       renderer.render(scene, camera);

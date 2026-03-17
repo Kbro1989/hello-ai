@@ -1,0 +1,5 @@
+[
+  { "npc_id": "modern_herbalist_anna", "region": "Mistwood Highlands", "era": "Modern", "position": [150, 250], "detection_radius": 200 },
+  { "npc_id": "medieval_knight_ronan", "region": "Mistwood Highlands", "era": "Medieval", "position": [800, 300], "detection_radius": 250 },
+  { "npc_id": "bronze_age_farmer_liv", "region": "Mistwood Highlands", "era": "Bronze Age", "position": [1600, 200], "detection_radius": 200 }
+]

@@ -1,0 +1,5 @@
+[
+  { "npc_id": "ashen_scout_kali", "region": "Ashen Wastes", "era": "Dark Ages", "position": [500, 100], "detection_radius": 250 },
+  { "npc_id": "iron_age_farmer_lyra", "region": "Ashen Wastes", "era": "Iron Age", "position": [3500, 150], "detection_radius": 200 },
+  { "npc_id": "modern_scout_elric", "region": "Ashen Wastes", "era": "Modern", "position": [200, 300], "detection_radius": 200 }
+]

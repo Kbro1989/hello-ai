@@ -1,6 +1,7 @@
 name = "hello-ai"
-main = "dist/index.js"
-compatibility_date = "2025-11-06"
+main = "src/index.ts"
+compatibility_date = "2025-10-11"
+workers_dev = true
 
 [[kv_namespaces]]
 binding = "ASSETS"
@@ -12,6 +13,9 @@ id = "328b510e11f94357b76bf7affa50830b"
 
 [ai]
 binding = "AI"
+
+[site]
+bucket = "./public"
 
 [observability]
 enabled = true

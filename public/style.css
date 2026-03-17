@@ -112,3 +112,25 @@ pre {
     padding: 10px;
     overflow-x: auto;
 }
+
+#drop-zone {
+  border: 2px dashed #ccc;
+  border-radius: 5px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+#drop-zone.dragover {
+  background-color: #333;
+  border-color: #fff;
+}
+
+#upload-progress {
+  margin-top: 1rem;
+}
+
+#progress-bar {
+  width: 100%;
+}

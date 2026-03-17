@@ -1,0 +1,6 @@
+[
+  { "era": "Modern", "region": "Sunken Coastlands", "feature": "abandoned_lighthouse", "position": [150, 300] },
+  { "era": "Modern", "region": "Sunken Coastlands", "phenomenon": "ufo_over_ocean", "position": [400, 600] },
+  { "era": "Viking Era", "region": "Sunken Coastlands", "phenomenon": "sea_serpent_sighting", "position": [650, 280] },
+  { "era": "Dark Ages", "region": "Sunken Coastlands", "phenomenon": "buried_shipwreck", "position": [1250, 200] }
+]

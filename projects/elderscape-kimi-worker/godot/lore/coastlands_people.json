@@ -1,0 +1,5 @@
+[
+  { "npc_id": "modern_fisherman_ian", "region": "Sunken Coastlands", "era": "Modern", "position": [100, 200], "detection_radius": 200 },
+  { "npc_id": "viking_warrior_ulf", "region": "Sunken Coastlands", "era": "Viking Era", "position": [600, 250], "detection_radius": 250 },
+  { "npc_id": "darkage_trader_elda", "region": "Sunken Coastlands", "era": "Dark Ages", "position": [1200, 180], "detection_radius": 200 }
+]

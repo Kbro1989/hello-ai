@@ -1,0 +1,72 @@
+[gd_scene load_steps=6 format=2]
+
+; This scene demonstrates a basic ElderScape world with multiple Kimi-powered NPCs.
+; To run:
+; 1. Open this scene in Godot.
+; 2. Ensure 'KimiClient' is set as an AutoLoad singleton (Project -> Project Settings -> AutoLoad).
+; 3. Run the scene (F5).
+; 4. Move the player (using arrow keys) near an NPC to trigger voice interaction.
+
+[ext_resource path="res://NpcPrefab.tscn" type="PackedScene" id=1]
+[ext_resource path="res://icon.png" type="Texture" id=2] ; Placeholder texture for player
+[ext_resource path="res://Player.gd" type="Script" id=3] ; Script for basic player movement
+
+[sub_resource type="RectangleShape2D" id=1]
+extents = Vector2( 32, 32 )
+
+[sub_resource type="CircleShape2D" id=2]
+radius = 32.0
+
+[node name="ElderScapeWorld" type="Node2D"]
+
+[node name="Ground" type="ColorRect" parent="."]
+margin_right = 1024.0
+margin_bottom = 600.0
+color = Color(0.2, 0.4, 0.2, 1)
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Player" type="KinematicBody2D" parent="."]
+position = Vector2(500, 300)
+script = ExtResource(3)
+player_id = "player_hero_1" ; Unique ID for the player
+
+[node name="Sprite" type="Sprite" parent="Player"]
+texture = ExtResource(2)
+modulate = Color(0.2, 0.2, 0.8, 1) ; Blue player
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+shape = SubResource(1)
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+current = true
+zoom = Vector2(0.8, 0.8)
+
+; --- NPCs ---
+
+[node name="StormcrownGuard" parent="." instance=ExtResource(1)]
+position = Vector2(200, 200)
+
+[node name="ProximityArea" parent="StormcrownGuard" index="3"]
+detection_radius = 300.0
+npc_id = "stormcrown_guard_1"
+region = "Stormcrown Highlands"
+
+[node name="AshenScout" parent="." instance=ExtResource(1)]
+position = Vector2(600, 200)
+
+[node name="ProximityArea" parent="AshenScout" index="3"]
+detection_radius = 250.0
+npc_id = "ashen_scout_kali"
+region = "Ashen Wastes"
+
+[node name="MistwoodHerbalist" parent="." instance=ExtResource(1)]
+position = Vector2(400, 500)
+
+[node name="ProximityArea" parent="MistwoodHerbalist" index="3"]
+detection_radius = 200.0
+npc_id = "mistwood_herbalist_elda"
+region = "Mistwood Forest"
+
+; --- End of NPCs ---
