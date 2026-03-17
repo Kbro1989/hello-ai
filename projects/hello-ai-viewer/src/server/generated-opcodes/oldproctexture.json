@@ -1,0 +1,27 @@
+[
+  "struct",
+  [
+    "color",
+    "ushort"
+  ],
+  [
+    "bool0",
+    "bool"
+  ],
+  [
+    "bool1",
+    "bool"
+  ],
+  [
+    "spriteid",
+    "ushort"
+  ],
+  [
+    "always00",
+    [
+      "buffer",
+      6,
+      "hex"
+    ]
+  ]
+]

@@ -1,0 +1,6 @@
+[
+  { "era": "Modern", "region": "Ashen Wastes", "feature": "abandoned_ruins", "position": [250, 400] },
+  { "era": "Modern", "region": "Ashen Wastes", "phenomenon": "ufo_sighting_2021", "position": [900, 500] },
+  { "era": "Dark Ages", "region": "Ashen Wastes", "phenomenon": "cryptid_ashen_wraith", "position": [600, 200] },
+  { "era": "Iron Age", "region": "Ashen Wastes", "phenomenon": "mysterious_iron_monolith", "position": [3700, 180] }
+]

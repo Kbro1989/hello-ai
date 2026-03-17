@@ -1,0 +1,28 @@
+{
+	"name": "hello-ai-viewer-minimal",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"build": "esbuild src/client/index.tsx --bundle --outdir=public/dist --splitting --sourcemap --format=esm",
+		"filetypes": "ts-node scripts/buildfiletypes.ts"
+	},
+	"dependencies": {
+		"@types/json-schema": "^7.0.15",
+		"itty-router": "^5.0.22",
+		"react": "^18.0.0",
+		"react-dom": "^18.0.0",
+		"three": "^0.181.0",
+		"three-stdlib": "^2.29.6"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20251107.0",
+		"@types/pako": "^2.0.4",
+		"@types/react": "^18.0.0",
+		"@types/react-dom": "^18.0.0",
+		"@types/three": "^0.181.0",
+		"esbuild": "0.25.2",
+		"typescript": "5.8.3",
+		"wrangler": "4.21.x"
+	}
+}

@@ -1,0 +1,6 @@
+[
+  { "era": "Modern", "region": "Mistwood Highlands", "feature": "radio_tower_ruins", "position": [300, 500] },
+  { "era": "Modern", "region": "Mistwood Highlands", "phenomenon": "mysterious_light_orb", "position": [900, 400] },
+  { "era": "Medieval", "region": "Mistwood Highlands", "phenomenon": "forest_spirit_sprite", "position": [850, 350] },
+  { "era": "Bronze Age", "region": "Mistwood Highlands", "phenomenon": "stone_circle_megalith", "position": [1650, 220] }
+]

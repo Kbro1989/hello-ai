@@ -1,0 +1,15 @@
+name = "elderscape-kimi-worker"
+main = "src/index.ts"
+compatibility_date = "2024-04-05"
+
+# This is for local development. For production, use `wrangler secret put`.
+[vars]
+KIMI_KEY = "your-local-dev-key"
+KIMI_ENDPOINT = "https://api.kimi.ai" # Base URL for Kimi API
+DEBUG = "true" # Set to "false" in production
+
+[[d1_databases]]
+binding = "DB" # The binding name used in the worker code
+database_name = "elderscape"
+database_id = "<your_d1_database_id>" # TODO: Replace with your actual D1 database ID
+preview_database_id = "<your_d1_database_id>" # TODO: Replace with your actual D1 database ID for `wrangler dev`

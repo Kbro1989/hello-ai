@@ -1,0 +1,52 @@
+{
+  "0x01": {
+    "name": "unk01",
+    "read": [
+      "tuple",
+      "ubyte",
+      "byte"
+    ]
+  },
+  "0x03": {
+    "name": "unk03",
+    "read": [
+      "array",
+      6,
+      "short"
+    ]
+  },
+  "0x04": {
+    "name": "unk04",
+    "read": [
+      "struct",
+      [
+        "unk0",
+        "ubyte"
+      ],
+      [
+        "unk1_0000",
+        "ushort"
+      ],
+      [
+        "unk2",
+        "ushort"
+      ]
+    ]
+  },
+  "0x06": {
+    "name": "unk06",
+    "read": "ubyte"
+  },
+  "0x08": {
+    "name": "unk08",
+    "read": "true"
+  },
+  "0x09": {
+    "name": "unk09",
+    "read": "true"
+  },
+  "0x0A": {
+    "name": "unk0A",
+    "read": "true"
+  }
+}

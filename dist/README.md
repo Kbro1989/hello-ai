@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "hello-ai" generated at 2025-11-06T11:22:21.040Z.

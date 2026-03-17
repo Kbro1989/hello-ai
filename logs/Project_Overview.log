@@ -1,0 +1,29 @@
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+[Chunk 1 processed] ## Project Overview
+
+The vision for `hello-ai` is to create a web application that mimics the RuneApps model viewer. This application will fetch RuneScape models and their metadata, allow users to view and modify model colors, and then save the modified model's image and metadata for use as assets in the user's own game.
+
+The project is structured in phases:
+1.  **Deconstructing the Model Viewer**: Analyzing the `rsmv` source code to understand model downloading, decoding, and rendering.
+2.  **Building the Front-End**: Creating a basic 3D viewer with Three.js and adding color-changing controls.
+3.  **"Save" Functionality**: Implementing image and metadata capture, and storing this data using Cloudflare Workers KV.
+
+The current implementation includes a minimal animation demo integrated into the Cloudflare Worker.

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI-Assisted 3D Model Dashboard</title>
+  <style>
+    body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; }
+    #sidebar { width: 300px; padding: 1rem; background: #222; color: #eee; overflow-y: auto; }
+    #canvas-container { flex: 1; }
+    button { margin: 0.25rem 0; width: 100%; padding: 0.5rem; }
+    pre { background: #111; color: #0f0; padding: 0.5rem; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <h2>Upload Cache File</h2>
+    <div id="drop-zone">
+      <p>Drag & drop a .dat or .idx file here, or click to select</p>
+      <input type="file" id="file-input" accept=".dat,.idx" style="display: none;">
+    </div>
+    <div id="upload-progress" style="display: none;">
+      <progress id="progress-bar" value="0" max="100"></progress>
+      <span id="progress-text">0%</span>
+    </div>
+    <h2>Available Models</h2>
+    <div id="models"></div>
+    <h2>Animations</h2>
+    <div id="animations">No model loaded.</div>
+    <h3>Typedef JSON</h3>
+    <pre id="typedef">Loading...</pre>
+  </div>
+  <div id="canvas-container"></div>
+
+  <script type="module">
+        import * as THREE from './js/three.module.js';
+        import { OrbitControls } from './js/OrbitControls.js';
+    import { createThreeMeshFromRsmvModel } from './js/rsmvThreeLoader.js';
+    import { updateAnimations } from './animation/loader.js';
+
+    // --- Fetch typedef JSON from KV ---
+    async function loadTypedef() {
+      try {
+        const res = await fetch('/api/typedef'); // Corrected to /api/typedefs
+        const data = await res.json();
+        document.getElementById('typedef').textContent = JSON.stringify(data, null, 2);
+        return data;
+      } catch (err) {
+        console.error('Failed to load typedef:', err);
+        document.getElementById('typedef').textContent = 'Error loading typedef';
+        return {};
+      }
+    }
+
+    const typedef = await loadTypedef();
+
+    // --- File Upload Logic ---
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const uploadProgress = document.getElementById('upload-progress');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+      if (files.length === 0) {
+        alert('No file selected.');
+        return;
+      }
+      const file = files[0];
+
+      // Validate file type
+      const validExtensions = ['.dat', '.idx'];
+      const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
+      if (!validExtensions.includes(fileExtension)) {
+        alert('Invalid file type. Please select a .dat or .idx file.');
+        return;
+      }
+
+      // Validate file size (50MB limit)
+      const maxSize = 50 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert('File is too large. Maximum size is 50MB.');
+        return;
+      }
+
+      readFile(file);
+    }
+
+    function readFile(file) {
+      const reader = new FileReader();
+
+      reader.onloadstart = () => {
+        uploadProgress.style.display = 'block';
+        progressBar.value = 0;
+        progressText.textContent = '0%';
+      };
+
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const percentLoaded = Math.round((e.loaded / e.total) * 100);
+          progressBar.value = percentLoaded;
+          progressText.textContent = `${percentLoaded}%`;
+        }
+      };
+
+      reader.onload = (e) => {
+        progressBar.value = 100;
+        progressText.textContent = '100%';
+        setTimeout(() => {
+          uploadProgress.style.display = 'none';
+        }, 500);
+        
+        // Assuming the parser function is available
+        loadRsmvModel(e.target.result);
+      };
+
+      reader.onerror = () => {
+        alert('Error reading file.');
+        uploadProgress.style.display = 'none';
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    function loadRsmvModel(data) {
+        if (currentModel) {
+            scene.remove(currentModel);
+        }
+        try {
+            const mesh = createThreeMeshFromRsmvModel(data, typedef);
+            currentModel = mesh;
+            scene.add(currentModel);
+
+            // Center camera on the new model
+            const box = new THREE.Box3().setFromObject(currentModel);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+            cameraZ *= 1.5; // Padding
+
+            camera.position.set(center.x, center.y, center.z + cameraZ);
+            controls.target.set(center.x, center.y, center.z);
+            controls.update();
+
+            displayAnimations(currentModel);
+
+        } catch (error) {
+            console.error('Error parsing or displaying model:', error);
+            alert('Failed to parse or display the model. See console for details.');
+        }
+    }
+
+    // --- Sample models list ---
+    const modelsList = ['Model 123'];
+    const modelsDiv = document.getElementById('models');
+    modelsList.forEach((name, i) => {
+      const btn = document.createElement('button');
+      btn.textContent = name;
+      btn.onclick = () => loadModel(123); // Directly use 123 as the model ID
+      modelsDiv.appendChild(btn);
+    });
+
+    // --- Three.js Scene Setup ---
+    console.log('Initializing Three.js scene setup...');
+    const container = document.getElementById('canvas-container');
+    if (!container) { console.error('Canvas container not found!'); return; }
+    console.log('Canvas container found:', container);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x333333); // Set a background color to make it visible
+    console.log('Scene created.');
+
+    const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.z = 5;
+    console.log('Camera created and positioned.');
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+    console.log('Renderer created and appended to container.');
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    console.log('OrbitControls initialized.');
+
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(5, 10, 7);
+    scene.add(light);
+    console.log('Directional light added to scene.');
+
+    // --- Placeholder for model loader ---
+    let currentModel;
+
+    function displayAnimations(model) {
+      const animationsDiv = document.getElementById('animations');
+      animationsDiv.innerHTML = '';
+      if (model.animations && model.animations.length > 0) {
+        model.animations.forEach(animation => {
+          const btn = document.createElement('button');
+          btn.textContent = animation.name;
+          btn.onclick = () => activateAnimation(model, animation);
+          animationsDiv.appendChild(btn);
+        });
+      } else {
+        animationsDiv.textContent = 'No animations in this model.';
+      }
+    }
+
+    function activateAnimation(model, animation) {
+        // This is a placeholder for animation activation logic
+        console.log(`Activating animation: ${animation.name}`);
+        // You would typically use THREE.AnimationMixer here
+    }
+
+    let lastFrameTime = 0;
+    function animate(currentTime) {
+      requestAnimationFrame(animate);
+
+      const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
+      lastFrameTime = currentTime;
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate(0); // Start animation with initial time 0
+
+    window.addEventListener('resize', () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+  </script>
+</body>
+</html>

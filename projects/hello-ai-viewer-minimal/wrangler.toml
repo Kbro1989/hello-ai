@@ -1,0 +1,10 @@
+name = "hello-ai-viewer-minimal"
+main = "src/server/index.ts"
+compatibility_date = "2025-10-08"
+
+[assets]
+bucket = "./public"
+
+[build]
+command = "npm run build"
+watch_dir = "src/client"

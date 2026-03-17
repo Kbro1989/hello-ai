@@ -1,0 +1,22 @@
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] ## Intro
+[Chunk 1 processed] # hello-ai: RuneScape Asset Pipeline
+
+This project is a custom asset creation pipeline for a new game. It provides a web-based tool to view, modify, and save RuneScape models for use in a new game project. The application is powered by a Cloudflare Worker and uses TypeScript for the backend, and HTML, CSS, and JavaScript for the frontend with Three.js for 3D rendering. Data storage is planned to use Cloudflare Workers KV.

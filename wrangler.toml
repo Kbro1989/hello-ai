@@ -1,0 +1,33 @@
+name = "hello-ai"
+main = "src/index.ts"
+compatibility_date = "2025-10-11"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "ASSETS"
+id = "9b6cce9e90644ff28a2cff2c113811ca"
+
+[[kv_namespaces]]
+binding = "CACHE_KV"
+id = "328b510e11f94357b76bf7affa50830b"
+
+[ai]
+binding = "AI"
+
+[site]
+bucket = "./public"
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+persist = true
+invocation_logs = true
+head_sampling_rate = 1
+
+[observability.traces]
+enabled = true
+persist = true
+head_sampling_rate = 1
