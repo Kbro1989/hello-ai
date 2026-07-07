@@ -1,104 +1,40 @@
-# Hello-AI Development Workflow
+# hello-ai — RS3 OB3 Model Server
 
-This project provides a **fully automated development workflow** for GEMINI.md using Node.js and Cloudflare Workers (free tier).
+> Cloudflare Workers · TypeScript · RSMV · KV
 
----
+Cloudflare Worker that **serves parsed RS3 `.ob3` model binaries** from KV storage.
+Embeds the RSMV `opdecoder` directly for edge-side cache format parsing.
 
-## Features
+## Endpoints
 
-- Hot reload on `src/` files and `GEMINI.md`
-- Chunked AI refinement of oversized sections
-- Interactive per-section editing
-- CLI flags: `--dry-run`, `--preview`, `--skip`
-- Logs each section in `logs/`
-- Cross-platform Node.js support
-- npm binary for convenience: `dev-worker`
+| Route | Method | Description |
+|---|---|---|
+| `/api/typedef` | GET | RS3 type definition JSON from KV |
+| `/api/models` | GET | Model list JSON from KV |
+| `/api/model/:id` | GET | Parse + serve OB3 binary as JSON |
+| `/api/ai/suggest-materials` | POST | AI material suggestion via Workers AI |
 
----
+## OB3 Parsing
 
-## Installation
+- Loads raw `.ob3` binary from `ASSETS` KV by key `model_ob3:<id>`
+- Parses via embedded `rsmv/opdecoder.ts` (RS3 cache opcode decoder)
+- Fallback: `parseSyntheticOb3()` for test model ID `123`
 
-```bash
-git clone <repo>
-cd hello-ai
-npm install
+## Architecture
+
+```
+src/
+├── index.ts          # Worker entry
+├── rsmv/opdecoder.ts # RS3 cache format decoder
+├── rsmv-web/         # Web-compatible RSMV layer
+├── utils/modelParser.ts
+├── model-viewer.ts
+├── modelStorage.ts
+├── geminiHelper.ts
+├── scene/
+├── ai/  api/  components/  routes/  services/  types/
 ```
 
-For TypeScript execution:
-
 ```bash
-npx ts-node ./bin/dev-worker.ts
+wrangler deploy
 ```
-
-Or install as npm binary:
-
-```bash
-npm link
-dev-worker --preview
-```
-
----
-
-## CLI Usage
-
-```bash
-dev-worker [options]
-```
-
-### Options
-
-- `--dry-run`: Refine sections without applying to GEMINI.md
-- `--preview`: Preview each section and confirm before refinement
-- `--skip`: Skip a section entirely
-- `-h, --help`: Show help
-
----
-
-## GEMINI.md Workflow
-
-1. Sections in GEMINI.md are detected by headings (`## Section Name`).
-2. Each section is automatically split into chunks if it exceeds token limits.
-3. Chunks are processed via `refineSectionWithChunking` (AI processing).
-4. Logs are saved in `logs/` per section for auditing.
-
----
-
-## Development
-
-Watch mode is automatic via chokidar:
-
-```bash
-dev-worker
-```
-
-Changes to `src/` files or `GEMINI.md` trigger refinement automatically.
-
----
-
-## Testing
-
-Run unit tests with Vitest:
-
-```bash
-npm run test
-```
-
-Tests cover:
-
-- CLI flag handling
-- Chunked processing
-- Logging behavior
-
----
-
-## Notes
-
-- Free-tier Cloudflare AI bindings are used; no paid features required.
-- Ensure `NODE_TLS_REJECT_UNAUTHORIZED=0` in Windows to bypass local TLS issues if needed.
-- Logs and session history are stored in `logs/`.
-
----
-
-## License
-
-MIT
